@@ -1,0 +1,40 @@
+{
+  "name": "solo-dive-planner",
+  "version": "1.0.0",
+  "description": "SDI RDP Solo Dive Gas Planner - Desktop application for planning solo dives using SDI Recreational Dive Planner methodology",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build:win": "electron-builder --win portable",
+    "build": "electron-builder"
+  },
+  "author": {
+    "name": "Damon Downing",
+    "email": "contact@example.com"
+  },
+  "license": "GPL-3.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Hackpig1974/solo-diver-gas-planner.git"
+  },
+  "build": {
+    "appId": "com.damondowning.solo-dive-planner",
+    "productName": "Solo Dive Gas Planner",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!**/*.md",
+      "!assets/screenshots/**"
+    ],
+    "win": {
+      "target": "portable",
+      "icon": "assets/icons/app_icon.ico"
+    }
+  },
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.13.3"
+  }
+}
