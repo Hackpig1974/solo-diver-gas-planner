@@ -40,8 +40,8 @@
       --shadow: rgba(0,0,0,0.4);
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 12px 2px 2px; background: var(--bg-secondary); color: var(--text-primary); transition: background 0.3s, color 0.3s; }
-    .container { max-width: 1300px; margin: 0 auto; background: var(--bg-section); padding: 18px 16px 14px; border-radius: 8px; box-shadow: 0 2px 4px var(--shadow); }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 12px 2px 2px; background: var(--bg-secondary); color: var(--text-primary); transition: background 0.3s, color 0.3s; overflow-y: auto; }
+    .container { max-width: 1180px; margin: 0 auto; background: var(--bg-section); padding: 18px 16px 14px; border-radius: 8px; box-shadow: 0 2px 4px var(--shadow); }
     .header-bar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; margin-bottom: 18px; }
     h1 { color: var(--text-primary); font-size: 24px; text-align: center; grid-column: 2; }
     .theme-selector { display: flex; gap: 10px; align-items: center; }
@@ -53,6 +53,7 @@
     .config-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 8px; }
     .config-item { display: flex; align-items: center; gap: 10px; }    .config-item label { font-weight: 600; min-width: 180px; color: var(--text-secondary); }
     .config-item input, .config-item select { padding: 8px; border: 1px solid var(--input-border); border-radius: 4px; background: var(--input-bg); color: var(--text-primary); font-size: 14px; width: 150px; }
+    .validation-message { min-height: 22px; margin-top: 8px; color: #c0392b; font-size: 13px; font-weight: 600; }
     .field-help { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border: 1px solid var(--input-border); border-radius: 50%; font-size: 12px; font-weight: 700; color: var(--text-secondary); cursor: help; user-select: none; }
     .term-rnt { color: var(--button-primary); font-weight: 700; cursor: help; }
     .term-tbt { color: var(--header-bg); font-weight: 700; cursor: help; }
@@ -69,6 +70,7 @@
     td { background: var(--bg-section); font-size: 14px; color: var(--text-primary); }
     .row-label { background: var(--row-label-bg); font-weight: 600; text-align: left; padding-left: 15px; }
     input[type="number"], input[type="text"] { width: 80px; padding: 6px; border: 1px solid var(--input-border); border-radius: 4px; text-align: center; background: var(--input-bg); color: var(--text-primary); }
+    input.invalid-input, select.invalid-input { border-color: #c0392b !important; box-shadow: 0 0 0 1px rgba(192,57,43,0.25); }
     input[readonly] { background: var(--row-label-bg); cursor: not-allowed; }
     .button-group { display: flex; justify-content: center; gap: 15px; margin-top: 10px; }
     .calculate-btn, .reset-btn { padding: 12px 30px; border: none; border-radius: 4px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
@@ -146,8 +148,11 @@
         <div class="config-item"><label>Dive Factor:</label><select id="diveFactorPreset"><option value="1.0" selected>1.0 - Static</option><option value="1.5">1.5 - Easy</option><option value="1.8">1.8 - Moderate</option><option value="2.0">2.0 - Tough</option><option value="2.5">2.5 - Stressful</option><option value="3.0">3.0 - Severe</option><option value="CUSTOM">Custom</option></select><input type="number" id="diveFactor" value="1.0" step="0.1" class="profile-hidden"></div>
         <div class="config-item"><label>Tank Capacity (cf):</label><input type="number" id="tankCapacity" value="80" step="0.1" readonly></div>
         <div class="config-item"><label><span class="term-sac" title="Surface air consumption rate at one atmosphere.">SAC Rate</span> (<span class="term-unit" title="Cubic feet of gas volume.">cf</span>/min):</label><input type="number" id="sacRate" value="0.5" step="0.1"></div>
+        <div class="config-item"><label>Rated Pressure (<span class="term-unit" title="Pounds per square inch pressure.">psi</span>):</label><input type="text" id="ratedPressure" value="3,000" readonly></div>
+        <div class="config-item"></div>
         <div class="config-item"><label>Starting Pressure (<span class="term-unit" title="Pounds per square inch pressure.">psi</span>):</label><input type="text" id="startingPressure" value="3,000"></div>
       </div>
+      <div id="validationMessage" class="validation-message" role="alert" aria-live="polite"></div>
     </div>
     <div class="section">
       <div class="section-title">DIVE PROFILES</div>

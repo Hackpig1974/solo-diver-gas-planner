@@ -13,6 +13,13 @@ const TANKS = {
 };
 
 const PG_ORDER = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'Z'];
+const RESULT_PREFIXES = ['rnt', 'tbt', 'pg', 'ndl', 'adjNdl', 'ata', 'sacAdj', 'gasCf', 'gasPsi', 'endPsi'];
+const INPUT_IDS = ['tankCapacity', 'ratedPressure', 'startingPressure', 'sacRate', 'diveFactor', 'numProfiles'];
+const MAX_RECREATIONAL_DEPTH = 130;
+const MIN_STARTING_PRESSURE = 500;
+const MAX_STARTING_PRESSURE = 3500;
+const MIN_RATED_PRESSURE = 500;
+const MAX_RATED_PRESSURE = 3500;
 
 function roundUpDepth(depth) {
   const supportedDepths = [10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 70, 80, 90, 100, 110, 120, 130, 140];
@@ -66,18 +73,23 @@ function syncTankTypeOptions() {
 function applySelectedTankDefaults() {
   const tankType = document.getElementById('tankType');
   const tankCapacity = document.getElementById('tankCapacity');
+  const ratedPressure = document.getElementById('ratedPressure');
   const startingPressure = document.getElementById('startingPressure');
   const tank = TANKS[tankType.value];
 
   if (tankType.value === 'CUSTOM') {
     tankCapacity.readOnly = false;
+    ratedPressure.readOnly = false;
     return;
   }
 
   tankCapacity.value = tank ? tank.actualCf.toFixed(1) : '80.0';
   tankCapacity.readOnly = true;
   if (tank) {
-    startingPressure.value = formatWithCommas(parseFloat(tank.ratedPsi.replace(/[^0-9.]/g, '')));
+    const parsedRatedPressure = parseFloat(tank.ratedPsi.replace(/[^0-9.]/g, ''));
+    ratedPressure.value = formatWithCommas(parsedRatedPressure);
+    ratedPressure.readOnly = true;
+    startingPressure.value = formatWithCommas(parsedRatedPressure);
   }
 }
 
@@ -106,9 +118,157 @@ function syncDiveFactorInput() {
 }
 
 function clearOutputs(index) {
-  ['rnt', 'tbt', 'pg', 'ndl', 'adjNdl', 'ata', 'sacAdj', 'gasCf', 'gasPsi', 'endPsi'].forEach((prefix) => {
+  RESULT_PREFIXES.forEach((prefix) => {
     document.getElementById(`${prefix}${index}`).textContent = '';
   });
+}
+
+function clearAllOutputs() {
+  for (let i = 1; i <= 6; i++) {
+    clearOutputs(i);
+  }
+}
+
+function parseNumericInput(elementId, { stripCommas = false } = {}) {
+  const element = document.getElementById(elementId);
+  const rawValue = stripCommas ? element.value.replace(/,/g, '').trim() : element.value.trim();
+
+  if (rawValue === '') {
+    return { rawValue, value: null, hasValue: false };
+  }
+
+  const value = Number(rawValue);
+  return { rawValue, value, hasValue: true };
+}
+
+function addValidationError(errors, fieldId, message) {
+  errors[fieldId] = message;
+}
+
+function readInputs() {
+  const tankCapacity = parseNumericInput('tankCapacity');
+  const ratedPressure = parseNumericInput('ratedPressure', { stripCommas: true });
+  const startingPressure = parseNumericInput('startingPressure', { stripCommas: true });
+  const sacRate = parseNumericInput('sacRate');
+  const diveFactor = parseNumericInput('diveFactor');
+  const tankType = document.getElementById('tankType').value;
+  const numProfiles = parseInt(document.getElementById('numProfiles').value, 10);
+  const activeRows = [];
+
+  for (let i = 1; i <= 6; i++) {
+    activeRows.push({
+      i,
+      isActive: i <= numProfiles || i === 6,
+      depth: parseNumericInput(`depth${i}`),
+      duration: parseNumericInput(`duration${i}`)
+    });
+  }
+
+  return {
+    tankCapacity,
+    ratedPressure,
+    startingPressure,
+    sacRate,
+    diveFactor,
+    tankType,
+    numProfiles,
+    activeRows
+  };
+}
+
+function validateInputs(inputs) {
+  const errors = {};
+
+  if (!Number.isInteger(inputs.numProfiles) || inputs.numProfiles < 1 || inputs.numProfiles > 5) {
+    addValidationError(errors, 'numProfiles', 'Select between 1 and 5 profiles.');
+  }
+
+  if (!inputs.tankCapacity.hasValue || !Number.isFinite(inputs.tankCapacity.value) || inputs.tankCapacity.value <= 0) {
+    addValidationError(errors, 'tankCapacity', 'Tank capacity must be greater than 0.');
+  }
+
+  if (!inputs.ratedPressure.hasValue || !Number.isFinite(inputs.ratedPressure.value)) {
+    addValidationError(errors, 'ratedPressure', 'Rated pressure is required.');
+  } else if (inputs.ratedPressure.value < MIN_RATED_PRESSURE) {
+    addValidationError(errors, 'ratedPressure', `Rated pressure must be at least ${MIN_RATED_PRESSURE} psi.`);
+  } else if (inputs.ratedPressure.value > MAX_RATED_PRESSURE) {
+    addValidationError(errors, 'ratedPressure', `Rated pressure cannot exceed ${MAX_RATED_PRESSURE} psi.`);
+  }
+
+  if (!inputs.startingPressure.hasValue || !Number.isFinite(inputs.startingPressure.value)) {
+    addValidationError(errors, 'startingPressure', 'Starting pressure is required.');
+  } else if (inputs.startingPressure.value < MIN_STARTING_PRESSURE) {
+    addValidationError(errors, 'startingPressure', `Starting pressure must be at least ${MIN_STARTING_PRESSURE} psi.`);
+  } else if (inputs.startingPressure.value > MAX_STARTING_PRESSURE) {
+    addValidationError(errors, 'startingPressure', `Starting pressure cannot exceed ${MAX_STARTING_PRESSURE} psi.`);
+  } else if (inputs.ratedPressure.hasValue && Number.isFinite(inputs.ratedPressure.value) && inputs.startingPressure.value > inputs.ratedPressure.value) {
+    addValidationError(errors, 'startingPressure', 'Starting pressure cannot exceed rated pressure.');
+  }
+
+  if (!inputs.sacRate.hasValue || !Number.isFinite(inputs.sacRate.value) || inputs.sacRate.value <= 0) {
+    addValidationError(errors, 'sacRate', 'SAC rate must be greater than 0.');
+  }
+
+  if (!inputs.diveFactor.hasValue || !Number.isFinite(inputs.diveFactor.value) || inputs.diveFactor.value <= 0) {
+    addValidationError(errors, 'diveFactor', 'Dive factor must be greater than 0.');
+  }
+
+  inputs.activeRows.forEach((row) => {
+    if (!row.isActive) {
+      return;
+    }
+
+    const isSafetyStop = row.i === 6;
+    const hasDepth = row.depth.hasValue;
+    const hasDuration = row.duration.hasValue;
+
+    if (!isSafetyStop && !hasDepth && !hasDuration) {
+      return;
+    }
+
+    if (!hasDepth) {
+      addValidationError(errors, `depth${row.i}`, 'Depth is required when a profile is in use.');
+    } else if (!Number.isFinite(row.depth.value) || row.depth.value <= 0) {
+      addValidationError(errors, `depth${row.i}`, 'Depth must be greater than 0.');
+    } else if (row.depth.value > MAX_RECREATIONAL_DEPTH) {
+      addValidationError(errors, `depth${row.i}`, `Depth cannot exceed ${MAX_RECREATIONAL_DEPTH} ft.`);
+    }
+
+    if (!hasDuration) {
+      addValidationError(errors, `duration${row.i}`, 'Duration is required when a profile is in use.');
+    } else if (!Number.isFinite(row.duration.value) || row.duration.value <= 0) {
+      addValidationError(errors, `duration${row.i}`, 'Duration must be greater than 0.');
+    }
+  });
+
+  return errors;
+}
+
+function renderValidationErrors(errors) {
+  const validationMessage = document.getElementById('validationMessage');
+  const fieldIds = ['tankCapacity', 'ratedPressure', 'startingPressure', 'sacRate', 'diveFactor'];
+
+  for (let i = 1; i <= 6; i++) {
+    fieldIds.push(`depth${i}`, `duration${i}`);
+  }
+
+  fieldIds.forEach((fieldId) => {
+    const element = document.getElementById(fieldId);
+    const message = errors[fieldId];
+    element.classList.toggle('invalid-input', Boolean(message));
+    if (message) {
+      element.setAttribute('aria-invalid', 'true');
+      element.title = message;
+    } else {
+      element.removeAttribute('aria-invalid');
+      element.removeAttribute('title');
+    }
+  });
+
+  const errorMessages = Object.values(errors);
+  validationMessage.textContent = errorMessages.length > 0
+    ? `Fix highlighted fields to calculate. ${errorMessages[0]}`
+    : '';
 }
 
 function updateProfileVisibility() {
@@ -130,55 +290,59 @@ function updateProfileVisibility() {
 }
 
 function calculate() {
-  const tankCapacity = parseFloat(document.getElementById('tankCapacity').value);
-  const startingPressure = parseFloat(document.getElementById('startingPressure').value.replace(/,/g, ''));
-  const sacRate = parseFloat(document.getElementById('sacRate').value);
-  const diveFactor = parseFloat(document.getElementById('diveFactor').value);
-  const numProfiles = parseInt(document.getElementById('numProfiles').value, 10);
-  const activeRows = [];
+  const inputs = readInputs();
+  const errors = validateInputs(inputs);
+  renderValidationErrors(errors);
 
-  for (let i = 1; i <= 6; i++) {
-    const isActive = i <= numProfiles || i === 6;
-    if (!isActive) {
-      clearOutputs(i);
-      continue;
+  inputs.activeRows.forEach((row) => {
+    if (!row.isActive) {
+      clearOutputs(row.i);
     }
-    activeRows.push({
-      i,
-      depth: parseFloat(document.getElementById(`depth${i}`).value) || 0,
-      duration: parseFloat(document.getElementById(`duration${i}`).value) || 0
-    });
+  });
+
+  if (Object.keys(errors).length > 0) {
+    clearAllOutputs();
+    return;
   }
+
+  const tankCapacity = inputs.tankCapacity.value;
+  const ratedPressure = inputs.ratedPressure.value;
+  const startingPressure = inputs.startingPressure.value;
+  const sacRate = inputs.sacRate.value;
+  const diveFactor = inputs.diveFactor.value;
+  const activeRows = inputs.activeRows.filter((row) => row.isActive);
 
   let remainingPressure = startingPressure;
   let carryRnt = 0;
 
   for (let index = 0; index < activeRows.length; index++) {
     const row = activeRows[index];
-    if (row.depth === 0 || row.duration === 0) {
+    if (!row.depth.hasValue && !row.duration.hasValue) {
       clearOutputs(row.i);
       carryRnt = 0;
       continue;
     }
 
-    const totalBottomTime = row.duration + carryRnt;
-    const endingPressureGroup = lookupPG(row.depth, totalBottomTime);
-    const ndl = lookupNDL(row.depth);
+    const depth = row.depth.value;
+    const duration = row.duration.value;
+    const totalBottomTime = duration + carryRnt;
+    const endingPressureGroup = lookupPG(depth, totalBottomTime);
+    const ndl = lookupNDL(depth);
     const adjustedNdl = ndl - carryRnt;
-    const ata = (row.depth / 33) + 1;
+    const ata = (depth / 33) + 1;
     const sacAdjusted = sacRate * ata;
-    const gasCf = sacAdjusted * diveFactor * row.duration;
-    const gasPsi = gasCf * (startingPressure / tankCapacity);
+    const gasCf = sacAdjusted * diveFactor * duration;
+    const gasPsi = gasCf * (ratedPressure / tankCapacity);
     remainingPressure -= gasPsi;
 
     let nextRnt = '';
     if (index < activeRows.length - 1) {
-      const nextDepth = activeRows[index + 1].depth;
+      const nextDepth = activeRows[index + 1].depth.value;
       if (nextDepth > 0) {
         nextRnt = lookupRNT(endingPressureGroup, nextDepth);
       }
-    } else if (row.depth > 0) {
-      nextRnt = lookupRNT(endingPressureGroup, row.depth);
+    } else if (depth > 0) {
+      nextRnt = lookupRNT(endingPressureGroup, depth);
     }
 
     document.getElementById(`rnt${row.i}`).textContent = nextRnt;
@@ -218,8 +382,19 @@ function applyTheme(theme) {
   localStorage.setItem('theme', theme);
 }
 
+function reportContentSize() {
+  const container = document.getElementById('mainContainer');
+  const width = Math.ceil((container?.getBoundingClientRect().width || document.documentElement.scrollWidth) + 40);
+  const height = Math.ceil(document.documentElement.scrollHeight + 20);
+  window.electronAPI.reportContentSize({ width, height });
+}
+
 window.calculate = calculate;
 window.reset = reset;
+
+window.electronAPI.onResetRequested(() => {
+  reset();
+});
 
 document.getElementById('tankType').addEventListener('change', function () {
   applySelectedTankDefaults();
@@ -245,6 +420,14 @@ document.getElementById('startingPressure').addEventListener('blur', function ()
   calculate();
 });
 
+document.getElementById('ratedPressure').addEventListener('blur', function () {
+  const value = this.value.replace(/,/g, '');
+  if (!isNaN(value) && value !== '') {
+    this.value = formatWithCommas(parseFloat(value));
+  }
+  calculate();
+});
+
 document.getElementById('diveFactor').addEventListener('blur', function () {
   const value = parseFloat(this.value);
   if (!isNaN(value)) {
@@ -261,6 +444,7 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (ev
   if (document.getElementById('themeSelector').value === 'system') {
     document.documentElement.setAttribute('data-theme', event.matches ? 'dark' : 'light');
   }
+  reportContentSize();
 });
 
 window.addEventListener('DOMContentLoaded', async () => {
@@ -277,6 +461,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   applyTheme(savedTheme);
   updateProfileVisibility();
   calculate();
+  reportContentSize();
   
   // Check for updates on startup
   checkForUpdate();
@@ -299,13 +484,14 @@ async function checkForUpdate() {
     const updateBannerText = document.getElementById('updateBannerText');
     const mainContainer = document.getElementById('mainContainer');
     
-    updateBannerText.textContent = `▲ Version ${result.version} available — click to download`;
+    updateBannerText.textContent = `\u25B2 Version ${result.version} available \u2014 click to download`;
     updateBanner.style.display = 'flex';
     mainContainer.classList.add('with-banner');
+    reportContentSize();
     
     // Click to open release page
     updateBannerText.onclick = () => { 
-      window.electronAPI.openExternal(result.url); 
+      window.electronAPI.openReleaseUrl(result.url); 
     };
   } catch (error) {
     console.error('Update check failed:', error);
@@ -316,9 +502,11 @@ function setupUpdateBanner() {
   const dismissBtn = document.getElementById('updateBannerDismiss');
   const updateBanner = document.getElementById('updateBanner');
   const mainContainer = document.getElementById('mainContainer');
-  
+
+  dismissBtn.textContent = '\u00D7';
   dismissBtn.onclick = () => {
     updateBanner.style.display = 'none';
     mainContainer.classList.remove('with-banner');
+    reportContentSize();
   };
 }
