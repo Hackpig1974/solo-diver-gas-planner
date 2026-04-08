@@ -287,8 +287,14 @@ window.addEventListener('DOMContentLoaded', async () => {
 async function checkForUpdate() {
   try {
     const result = await window.electronAPI.checkForUpdate();
-    if (!result.hasUpdate) return;
+    console.log('Update check result:', result);
     
+    if (!result.hasUpdate) {
+      console.log('No update available');
+      return;
+    }
+    
+    console.log('Update available! Showing banner...');
     const updateBanner = document.getElementById('updateBanner');
     const updateBannerText = document.getElementById('updateBannerText');
     const mainContainer = document.getElementById('mainContainer');
@@ -302,7 +308,7 @@ async function checkForUpdate() {
       window.electronAPI.openExternal(result.url); 
     };
   } catch (error) {
-    // Update check failed silently
+    console.error('Update check failed:', error);
   }
 }
 

@@ -102,6 +102,10 @@ function createWindow() {
   });
 
   win.loadFile('index.html');
+  
+  // Open DevTools for debugging
+  win.webContents.openDevTools();
+  
   win.webContents.on('did-finish-load', async () => {
     try {
       const contentSize = await win.webContents.executeJavaScript(`
