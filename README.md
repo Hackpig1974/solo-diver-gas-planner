@@ -1,3 +1,7 @@
+There is also an online version you can use: https://solodiver.damon1974.com
+Thanks.
+
+
 # Solo Dive Gas Planner - SDI RDP
 
 A desktop application for planning solo dives using SDI (Scuba Diving International) Recreational Dive Planner methodology. Calculate nitrogen loading, gas consumption, and multi-profile dive plans.
