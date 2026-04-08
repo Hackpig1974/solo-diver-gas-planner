@@ -129,6 +129,33 @@ function clearAllOutputs() {
   }
 }
 
+function syncDiveProfilesBanner() {
+  const diveProfilesHeader = document.getElementById('diveProfilesHeader');
+  const diveProfilesBanner = document.getElementById('diveProfilesBanner');
+  const profileCount = parseInt(document.getElementById('numProfiles').value, 10);
+  const firstProfileCell = document.getElementById('depth1')?.closest('td');
+  const safetyStopCell = document.getElementById('depth6')?.closest('td');
+
+  if (!diveProfilesHeader || !diveProfilesBanner || !firstProfileCell || !safetyStopCell) {
+    return;
+  }
+
+  const headerRect = diveProfilesHeader.getBoundingClientRect();
+  const firstCellRect = firstProfileCell.getBoundingClientRect();
+  const lastCellRect = safetyStopCell.getBoundingClientRect();
+  const leftInset = Math.max(0, Math.round(firstCellRect.left - headerRect.left));
+  const bannerWidth = Math.max(0, Math.round(lastCellRect.right - firstCellRect.left));
+
+  diveProfilesBanner.style.left = `${leftInset}px`;
+  diveProfilesBanner.style.width = `${bannerWidth}px`;
+  diveProfilesBanner.style.gridTemplateColumns = `repeat(${profileCount + 1}, minmax(0, 1fr))`;
+
+  for (let i = 1; i <= 5; i++) {
+    document.getElementById(`banner${i}`).className = i <= profileCount ? 'column-banner-title' : 'column-banner-title profile-hidden';
+  }
+  document.getElementById('banner6').className = 'column-banner-title';
+}
+
 function parseNumericInput(elementId, { stripCommas = false } = {}) {
   const element = document.getElementById(elementId);
   const rawValue = stripCommas ? element.value.replace(/,/g, '').trim() : element.value.trim();
@@ -273,6 +300,7 @@ function renderValidationErrors(errors) {
 
 function updateProfileVisibility() {
   const profileCount = parseInt(document.getElementById('numProfiles').value, 10);
+
   for (let i = 1; i <= 6; i++) {
     const visible = i <= profileCount || i === 6;
     const className = visible ? '' : 'profile-hidden';
@@ -286,6 +314,7 @@ function updateProfileVisibility() {
       element.className = `result-value ${className}`;
     });
   }
+  syncDiveProfilesBanner();
   calculate();
 }
 
@@ -460,6 +489,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   syncDiveFactorInput();
   applyTheme(savedTheme);
   updateProfileVisibility();
+  window.addEventListener('resize', syncDiveProfilesBanner);
   calculate();
   reportContentSize();
   

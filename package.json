@@ -1,6 +1,6 @@
 {
   "name": "solo-dive-planner",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "SDI RDP Solo Dive Gas Planner - Desktop application for planning solo dives using SDI Recreational Dive Planner methodology",
   "main": "main.js",
   "scripts": {

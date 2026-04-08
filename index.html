@@ -62,6 +62,11 @@
     .term-ata { color: #8e44ad; font-weight: 700; cursor: help; }
     .term-unit { color: #c0392b; font-weight: 700; cursor: help; }
     table { width: 100%; border-collapse: collapse; margin-top: 10px; table-layout: fixed; }
+    .section-header { position: relative; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 2px solid var(--header-bg); min-height: 26px; }
+    .section-header .section-title { margin-bottom: 0; padding-bottom: 0; border-bottom: none; display: inline-block; }
+    .column-banner-row { position: absolute; top: 0; display: grid; align-items: end; }
+    .column-banner-title { font-size: 16px; font-weight: bold; color: var(--text-primary); text-align: center; white-space: nowrap; }
+    #banner6 { color: #c0392b; }
     col.row-label-col { width: 200px; }
     col.profile-col { width: calc((100% - 200px) / 6); }
     th, td { padding: 10px; text-align: center; border: 1px solid var(--border-color); }
@@ -155,8 +160,18 @@
       <div id="validationMessage" class="validation-message" role="alert" aria-live="polite"></div>
     </div>
     <div class="section">
-      <div class="section-title">DIVE PROFILES</div>
-      <table>
+      <div class="section-header" id="diveProfilesHeader">
+        <div class="section-title">DIVE PROFILES</div>
+        <div class="column-banner-row" id="diveProfilesBanner" aria-hidden="true">
+          <div class="column-banner-title" id="banner1">Profile 1</div>
+          <div class="column-banner-title profile-hidden" id="banner2">Profile 2</div>
+          <div class="column-banner-title profile-hidden" id="banner3">Profile 3</div>
+          <div class="column-banner-title profile-hidden" id="banner4">Profile 4</div>
+          <div class="column-banner-title profile-hidden" id="banner5">Profile 5</div>
+          <div class="column-banner-title" id="banner6">Safety Stop</div>
+        </div>
+      </div>
+      <table id="diveProfilesTable">
       <colgroup><col class="row-label-col"><col class="profile-col"><col class="profile-col"><col class="profile-col"><col class="profile-col"><col class="profile-col"><col class="profile-col"></colgroup>
       <thead><tr><th></th><th id="hdr1">Profile 1</th><th id="hdr2" class="profile-hidden">Profile 2</th><th id="hdr3" class="profile-hidden">Profile 3</th><th id="hdr4" class="profile-hidden">Profile 4</th><th id="hdr5" class="profile-hidden">Profile 5</th><th id="hdr6" class="profile-hidden">Safety Stop</th></tr></thead><tbody>
       <tr><td class="row-label">Depth (ft):</td><td><input type="number" id="depth1" value="" step="5"></td><td class="profile-hidden"><input type="number" id="depth2" value="" step="5"></td><td class="profile-hidden"><input type="number" id="depth3" value="" step="5"></td><td class="profile-hidden"><input type="number" id="depth4" value="" step="5"></td><td class="profile-hidden"><input type="number" id="depth5" value="" step="5"></td><td class="profile-hidden"><input type="number" id="depth6" value="15" step="5" readonly></td></tr>
