@@ -1,0 +1,13 @@
+name: Proxmox Runner Test
+on: 
+  workflow_dispatch: # This adds a "Run" button to the GitHub UI
+
+jobs:
+  check-connection:
+    runs-on: self-hosted  # This MUST match the label on your runner
+    steps:
+      - name: Hello from the LXC
+        run: |
+          echo "Success! This command is running inside the Proxmox LXC."
+          echo "Hostname: $(hostname)"
+          echo "Docker version: $(docker --version)"
